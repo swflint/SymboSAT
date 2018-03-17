@@ -1,0 +1,152 @@
+#+Title: Symbolic SAT Solver
+#+AUTHOR: Samuel W. Flint
+#+EMAIL: swflint@flintfam.org
+#+DATE: <2018-03-17 Sat 15:35>
+#+INFOJS_OPT: view:info toc:nil path:http://flintfam.org/org-info.js
+#+OPTIONS: toc:nil H:5 ':t *:t todo:nil stat:nil d:nil
+#+PROPERTY: header-args :noweb no-export :comments noweb
+#+LATEX_HEADER: \usepackage[margins=0.75in]{geometry}
+#+LATEX_HEADER: \parskip=5pt
+#+LATEX_HEADER: \parindent=0pt
+#+LATEX_HEADER: \lstset{texcl=true,breaklines=true,columns=fullflexible,basicstyle=\ttfamily,frame=lines,literate={<=}{$\leq$}1 {>=}{$\geq$}1}
+#+LATEX_CLASS_OPTIONS: [10pt,twoside]
+#+LATEX_HEADER: \pagestyle{headings}
+
+* Export                                                           :noexport:
+
+#+Caption: Export Document
+#+Name: export-document
+#+BEGIN_SRC emacs-lisp :exports none :results none
+  (save-buffer)
+  (let ((org-confirm-babel-evaluate
+         (lambda (lang body)
+           (declare (ignorable lang body))
+           nil)))
+    (org-latex-export-to-pdf))
+#+END_SRC
+
+* Tangle                                                           :noexport:
+
+#+Caption: Tangle Document
+#+Name: tangle-document
+#+BEGIN_SRC emacs-lisp :exports none :results none
+  (save-buffer)
+  (let ((python-indent-offset 4))
+    (org-babel-tangle))
+#+END_SRC
+
+* Introduction
+
+* TOC                                                                :ignore:
+
+#+TOC: headlines 3
+#+TOC: listings
+
+* Expression Classification
+
+#+Caption: Expression Classification
+#+Name: expression-classification
+#+BEGIN_SRC lisp
+  (defvar *expression-types* '())
+
+  (defmacro define-expression-type (type-name &rest predicate)
+    (check-type type-name symbol)
+    (let ((predicate-name (symbolicate type-name '-p)))
+      `(progn
+         (defun ,predicate-name (expression)
+           ,@predicate)
+         (pushnew '(,type-name . ,predicate-name) *expression-types* :key #'first :test #'equal)
+         (export ',type-name)
+         ',type-name)))
+
+  (defun expression-type-p (expression-type expression)
+    (if (eq '* expression-type)
+        t
+        (funcall (cdr (assoc expression-type *expression-types*))
+                 expression)))
+
+  <<not-classification>>
+  <<and-classification>>
+  <<or-classification>>
+#+END_SRC
+
+** Not
+
+#+Caption: Not Classification
+#+Name: not-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-not
+      (and (equal (first expression) 'not)
+         (= (length expression) 2)))
+
+  (define-expression-type double-not
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-not (second expression))))
+#+END_SRC
+
+** And
+
+#+Caption: And Classification
+#+Name: and-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-and
+      (and (equal (first expression) 'and)
+         (>= (length (rest expression)) 2)))
+
+  (define-expression-type not-and
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-and (second expression))))
+#+END_SRC
+
+** Or
+
+#+Caption: Or Classification
+#+Name: or-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-or
+      (and (equal (first expression) 'or)
+         (>= (length (rest expression)) 3)))
+
+  (define-expression-type not-or
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-or (second expression))))
+#+END_SRC
+
+** Implication
+
+#+Caption: Implication Classification
+#+Name: implication-classification
+#+BEGIN_SRC lisp 
+
+#+END_SRC
+
+** Biconditional
+
+** Other
+
+* Driver
+
+* Expression Handlers
+
+* Utilities
+
+* Packaging
+
+#+Caption: Packaging
+#+Name: packaging
+#+BEGIN_SRC lisp :tangle "symbolic-sat.lisp"
+  (ql:quickload :alexandria)
+
+  (defpackage #:symbolic-sat
+    (:use #:cl)
+    (:import-from #:alexandria
+                  #:symbolicate)
+    (:export #:expression-type-p
+             #:implies
+             #:iff))
+
+  <<expression-classification>>
+#+END_SRC
