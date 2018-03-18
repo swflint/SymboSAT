@@ -1,7 +1,7 @@
 #+Title: Symbolic SAT Solver
 #+AUTHOR: Samuel W. Flint
 #+EMAIL: swflint@flintfam.org
-#+DATE: <2018-03-17 Sat 15:35>
+#+DATE: \today
 #+INFOJS_OPT: view:info toc:nil path:http://flintfam.org/org-info.js
 #+OPTIONS: toc:nil H:5 ':t *:t todo:nil stat:nil d:nil
 #+PROPERTY: header-args :noweb no-export :comments noweb
@@ -565,4 +565,4 @@ This is organized as follows: handler storage, a recipe for handler definition, 
 
 * Bibliography                                                       :ignore:
 
-#+BIBLIOGRAPHY: bibliography plain
+#+BIBLIOGRAPHY: bibliography acm
