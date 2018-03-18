@@ -35,14 +35,17 @@
     (org-babel-tangle))
 #+END_SRC
 
-* Introduction
+* TODO Introduction
 
 * TOC                                                                :ignore:
 
 #+TOC: headlines 3
 #+TOC: listings
 
-* Expression Classification
+* TODO Expression Classification
+:PROPERTIES:
+:ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
+:END:
 
 #+Caption: Expression Classification
 #+Name: expression-classification
@@ -68,15 +71,22 @@
   <<not-classification>>
   <<and-classification>>
   <<or-classification>>
+  <<implication-classification>>
+  <<bicond-classification>>
+  <<atom-classification>>
 #+END_SRC
 
-** Not
+** TODO Not
+:PROPERTIES:
+:ID:       4884bd62-39d8-487e-9b1d-36cb1a6b8372
+:END:
 
 #+Caption: Not Classification
 #+Name: not-classification
 #+BEGIN_SRC lisp 
   (define-expression-type sentential-not
-      (and (equal (first expression) 'not)
+      (and (listp expression)
+         (equal (first expression) 'not)
          (= (length expression) 2)))
 
   (define-expression-type double-not
@@ -85,13 +95,17 @@
          (expression-type-p 'sentential-not (second expression))))
 #+END_SRC
 
-** And
+** TODO And
+:PROPERTIES:
+:ID:       3ab30c56-7eda-4bb5-8e17-aa49587d7b81
+:END:
 
 #+Caption: And Classification
 #+Name: and-classification
 #+BEGIN_SRC lisp 
   (define-expression-type sentential-and
-      (and (equal (first expression) 'and)
+      (and (listp expression)
+         (equal (first expression) 'and)
          (>= (length (rest expression)) 2)))
 
   (define-expression-type not-and
@@ -100,14 +114,18 @@
          (expression-type-p 'sentential-and (second expression))))
 #+END_SRC
 
-** Or
+** TODO Or
+:PROPERTIES:
+:ID:       d3c68b18-5f67-452c-ae9b-44285affe2a3
+:END:
 
 #+Caption: Or Classification
 #+Name: or-classification
 #+BEGIN_SRC lisp 
   (define-expression-type sentential-or
-      (and (equal (first expression) 'or)
-         (>= (length (rest expression)) 3)))
+      (and (listp expression)
+         (equal (first expression) 'or)
+         (>= (length (rest expression)) 2)))
 
   (define-expression-type not-or
       (and (expression-type-p 'sentential-not expression)
@@ -115,25 +133,271 @@
          (expression-type-p 'sentential-or (second expression))))
 #+END_SRC
 
-** Implication
+** TODO Implication
+:PROPERTIES:
+:ID:       5df00489-662d-4579-b665-3e381113958d
+:END:
 
 #+Caption: Implication Classification
 #+Name: implication-classification
 #+BEGIN_SRC lisp 
+  (define-expression-type sentential-implication
+      (and (listp expression)
+         (equal 'implies (first expression))
+         (= (length (rest expression)) 2)))
 
+  (define-expression-type not-implication
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-implication (second expression))))
 #+END_SRC
 
-** Biconditional
+** TODO Biconditional
+:PROPERTIES:
+:ID:       a390b595-f794-4b1d-8233-376fc704c85c
+:END:
 
-** Other
+#+Caption: Biconditional Classification
+#+Name: bicond-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-biconditional
+      (and (listp expression)
+         (equal (first expression) 'iff)
+         (= (length (rest expression)) 2)))
 
-* Driver
+  (define-expression-type not-biconditional
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-biconditional (second expression))))
+#+END_SRC
 
-* Expression Handlers
+** TODO Other
+:PROPERTIES:
+:ID:       f80903bd-0afe-40fd-9c2f-48d458393483
+:END:
 
-* Utilities
+#+Caption: Atom Classification
+#+Name: atom-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type atom
+      (or (symbolp expression)
+         (and (expression-type-p 'sentential-not expression)
+            (symbolp (second expression)))))
+#+END_SRC
 
-* Packaging
+* TODO Driver
+:PROPERTIES:
+:ID:       d448fc32-6def-404b-a2b1-23f74dd28a40
+:END:
+
+#+Caption: Driver
+#+Name: driver
+#+BEGIN_SRC lisp 
+  (defun solve-it (unchecked current-path)
+    (if (null unchecked)
+        (collect-atoms current-path)
+        (dispatch-on (first unchecked)
+                     (rest unchecked)
+                     current-path)))
+
+  (defun solve (expression)
+    (solve-it (list expression)
+              (list expression)))
+#+END_SRC
+
+* TODO Expression Handlers
+:PROPERTIES:
+:ID:       99e68a1a-b3a4-40c5-9b2e-92d5e976d5bb
+:END:
+
+#+Caption: Expression Handlers
+#+Name: expression-handlers
+#+BEGIN_SRC lisp 
+  (defvar *expression-handlers* '())
+
+  (defmacro define-expression-handler (expression-type &body handler)
+    (let ((name (symbolicate 'handle- expression-type)))
+      `(progn
+         (defun ,name (expression unchecked current-path)
+           ,@handler)
+         (pushnew '(,expression-type . ,name) *expression-handlers* :key #'first)
+         ',expression-type)))
+
+  (defun dispatch-on (expression unchecked current-path)
+    (do* ((pair (first *expression-handlers*) (first remaining))
+          (remaining (rest *expression-handlers*) (rest remaining)))
+         ((or (null pair)
+             (expression-type-p (car pair) expression))
+          (when (not (null pair))
+            (funcall (cdr pair) expression unchecked current-path)))))
+
+  <<and-handlers>>
+  <<or-handlers>>
+  <<implication-handlers>>
+  <<biconditional-handlers>>
+  <<doubled-not-handler>>
+#+END_SRC
+
+** TODO And
+:PROPERTIES:
+:ID:       e630fba3-005d-474e-88e5-0acb61f66ab1
+:END:
+
+#+Caption: And Handlers
+#+Name: and-handlers
+#+BEGIN_SRC lisp
+  (define-expression-handler sentential-and
+    (when (not (any-close (rest expression) current-path))
+      (solve-it (concatenate 'list (collect-non-atoms (rest expression)) unchecked)
+                (concatenate 'list (rest expression) current-path))))
+
+  (define-expression-handler not-and
+    (let ((expr-list (map 'list (lambda (expr) `(not ,expr)) (rest (second expression))))
+          (satp nil))
+      (do* ((expr-prime (first expr-list) (first expr-list-prime))
+            (expr-list-prime (rest expr-list) (rest expr-list-prime)))
+           ((or satp (null expr-prime)) satp)
+        (when (not (close-tree-p expr-prime current-path))
+          (setf satp (solve-it (non-atomic-add expr-prime unchecked)
+                               (cons expr-prime current-path)))))))
+#+END_SRC
+
+** TODO Or
+:PROPERTIES:
+:ID:       e148ef8b-8287-4930-a489-187fea5a63c0
+:END:
+
+#+Caption: Or Handlers
+#+Name: or-handlers
+#+BEGIN_SRC lisp 
+  (define-expression-handler sentential-or
+    (let ((satp nil))
+      (do ((expr (first (rest expression)) (first expr-list))
+           (expr-list (rest (rest expression)) (rest expr-list)))
+          ((or satp (null expr)) satp)
+        (when (not (close-tree-p expr current-path))
+          (setf satp (solve-it (non-atomic-add expr unchecked)
+                               (cons expr current-path)))))))
+
+  (define-expression-handler not-or
+    (let ((expr-list (map 'list (lambda (expr) `(not ,expr))
+                          (rest (second expression)))))
+      (when (not (any-close expr-list current-path))
+        (solve-it (concatenate 'list (collect-non-atoms expr-list) unchecked)
+                  (concatenate 'list expr-list current-path)))))
+#+END_SRC
+
+** TODO Implication
+:PROPERTIES:
+:ID:       a2eb81f5-c834-4529-b367-f618e877a817
+:END:
+
+#+Caption: Implication Handlers
+#+Name: implication-handlers
+#+BEGIN_SRC lisp 
+  (define-expression-handler sentential-implication
+    (let ((branch-a `(not ,(second expression)))
+          (branch-b (third expression)))
+      (cond
+        ((not (close-tree-p branch-a current-path))
+         (solve-it (non-atomic-add branch-a unchecked) (cons branch-a current-path)))
+        ((not (close-tree-p branch-b current-path))
+         (solve-it (non-atomic-add branch-b unchecked) (cons branch-b current-path)))
+        (t nil))))
+
+  (define-expression-handler not-implication
+    (let ((the-expr-list (list (second (second expression)) `(not ,(third (second expression))))))
+      (when (not (any-close the-expr-list current-path))
+        (solve-it (concatenate 'list (collect-non-atoms the-expr-list) unchecked)
+                  (concatenate 'list the-expr-list current-path)))))
+#+END_SRC
+
+** TODO Biconditional
+:PROPERTIES:
+:ID:       3a765282-de1f-450b-8d45-e3cf270886d0
+:END:
+
+#+Caption: Biconditional
+#+Name: biconditional-handlers
+#+BEGIN_SRC lisp 
+  (define-expression-handler sentential-biconditional
+    (let* ((branch-a (rest expression))
+           (branch-b (map 'list (lambda (expr) `(not ,expr)) branch-a)))
+      (cond
+        ((not (any-close branch-a current-path))
+         (solve-it (concatenate 'list (collect-non-atoms branch-a) unchecked)
+                   (concatenate 'list branch-a current-path)))
+        ((not (any-close branch-b current-path))
+         (solve-it (concatenate 'list (collect-non-atoms branch-b) unchecked)
+                   (concatenate 'list branch-b current-path)))
+        (t nil))))
+
+  (define-expression-handler not-biconditional
+    (let ((branch-a (list (second (second expression)) `(not ,(third (second expression)))))
+          (branch-b (list `(not ,(second (second expression))) (third (second expression)))))
+      (cond
+        ((not (any-close branch-a current-path))
+         (solve-it (concatenate 'list (collect-non-atoms branch-a) unchecked)
+                   (concatenate 'list branch-a current-path)))
+        ((not (any-close branch-b current-path))
+         (solve-it (concatenate 'list (collect-non-atoms branch-b) unchecked)
+                   (concatenate 'list branch-b current-path)))
+        (t nil))))
+#+END_SRC
+
+** TODO Doubled Not
+
+#+Caption: Doubled Not Handler
+#+Name: doubled-not-handler
+#+BEGIN_SRC lisp 
+  (define-expression-handler double-not
+    (let ((new (second (second expression))))
+      (solve-it (non-atomic-add new unchecked) (cons new current-path))))
+#+END_SRC
+
+* TODO Utilities
+:PROPERTIES:
+:ID:       1c6e6f57-1c3e-4a9f-bd08-6223fc83e4f9
+:END:
+
+#+Caption: Utilities
+#+Name: utils
+#+BEGIN_SRC lisp 
+  (defun collect-atoms (expr-list)
+    (remove-duplicates (remove-if (lambda (expr)
+                                    (not (expression-type-p 'atom expr)))
+                                  expr-list)
+                       :test #'equal))
+
+  (defun collect-non-atoms (expr-list)
+    (remove-duplicates (remove-if (lambda (expr)
+                                    (expression-type-p 'atom expr))
+                                  expr-list)
+                       :test #'equal))
+
+  (defun close-tree-p (current path)
+    (or (member `(not ,current) path :test #'equal)
+       (and (expression-type-p 'sentential-not current)
+          (member (second current) path :test #'equal))))
+
+  (defun any-close (expr-list path)
+    (do* ((expr (first expr-list) (first expr-list-prime))
+          (expr-list-prime (rest expr-list) (rest expr-list-prime)))
+         ((or (close-tree-p expr path)
+             (null expr))
+          (when (not (null expr))
+            t))))
+
+  (defun non-atomic-add (expr list)
+    (if (not (expression-type-p 'atom expr))
+        (cons expr list)
+        list))
+#+END_SRC
+
+* TODO Packaging
+:PROPERTIES:
+:ID:       ca73d4ab-45ba-4e7c-819a-b87d6a529083
+:END:
 
 #+Caption: Packaging
 #+Name: packaging
@@ -146,7 +410,13 @@
                   #:symbolicate)
     (:export #:expression-type-p
              #:implies
-             #:iff))
+             #:iff
+             #:solve))
+
+  (in-package #:symbolic-sat)
 
   <<expression-classification>>
+  <<utils>>
+  <<expression-handlers>>
+  <<driver>>
 #+END_SRC
