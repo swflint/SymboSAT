@@ -52,10 +52,12 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
 #+TOC: headlines 3
 #+TOC: listings
 
-* TODO Solver
+* WORKING Solver [1/2]
 :PROPERTIES:
 :ID:       0883718a-8b30-4646-a496-9a67eb9d876c
 :END:
+
+The solver itself is composed of two components, the driver and expression handlers.  The driver is used to dispatch based on the type of expression for expressions that have yet to be handled, and expression handlers actually deal with the expressions
 
 #+Caption: Solver
 #+Name: solver
@@ -66,24 +68,20 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
   <<driver>>
 #+END_SRC
 
-** TODO Driver
+** DONE Driver
+CLOSED: [2018-03-18 Sun 10:14]
 :PROPERTIES:
 :ID:       d448fc32-6def-404b-a2b1-23f74dd28a40
 :END:
 
+The driver itself is a simple shim on top of the handler dispatch facility.  As such, it takes an expression, adds the expression to a new list (the unhandled expressions list), and creates another list (the current path).
+
 #+Caption: Driver
 #+Name: driver
 #+BEGIN_SRC lisp 
-  (defun solve-it (unchecked current-path)
-    (if (null unchecked)
-        (collect-atoms current-path)
-        (dispatch-on (first unchecked)
-                     (rest unchecked)
-                     current-path)))
-
   (defun solve (expression)
-    (solve-it (list expression)
-              (list expression)))
+    (dispatch-solution (non-atomic-add expression (list))
+                       (list expression)))
 #+END_SRC
 
 ** TODO Expression Handlers
@@ -96,6 +94,22 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
 #+BEGIN_SRC lisp 
   (defvar *handlers* '())
 
+  <<defining-handlers>>
+
+  <<dispatching-handlers>>
+
+  <<and-handlers>>
+  <<or-handlers>>
+  <<implication-handlers>>
+  <<biconditional-handlers>>
+  <<doubled-not-handler>>
+#+END_SRC
+
+*** TODO Defining Handlers
+
+#+Caption: Defining Handlers
+#+Name: defining-handlers
+#+BEGIN_SRC lisp 
   (defmacro define-expression-handler (expression-type &body handler)
     (let ((name (symbolicate 'handle- expression-type)))
       `(progn
@@ -103,20 +117,24 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
            ,@handler)
          (pushnew '(,expression-type . ,name) *handlers* :key #'first)
          ',expression-type)))
+#+END_SRC
 
-  (defun dispatch-on (expression unchecked current-path)
-    (do* ((pair (first *handlers*) (first remaining))
-          (remaining (rest *handlers*) (rest remaining)))
-         ((or (null pair)
-             (expression-type-p (car pair) expression))
-          (when (not (null pair))
-            (funcall (cdr pair) expression unchecked current-path)))))
+*** TODO Dispatching Handlers
 
-  <<and-handlers>>
-  <<or-handlers>>
-  <<implication-handlers>>
-  <<biconditional-handlers>>
-  <<doubled-not-handler>>
+#+Caption: Dispatching Handlers
+#+Name: dispatching-handlers
+#+BEGIN_SRC lisp 
+  (defun dispatch-solution (unchecked current-path)
+    (if (null unchecked)
+        (collect-atoms current-path)
+        (let ((expression (first unchecked))
+              (unchecked (rest unchecked)))
+          (do* ((pair (first *handlers*) (first remaining))
+                (remaining (rest *handlers*) (rest remaining)))
+               ((or (null pair)
+                   (expression-type-p (car pair) expression))
+                (when (not (null pair))
+                  (funcall (cdr pair) expression unchecked current-path)))))))
 #+END_SRC
 
 *** TODO And
@@ -129,7 +147,7 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
 #+BEGIN_SRC lisp
   (define-expression-handler sentential-and
     (when (not (any-conflict-p (rest expression) current-path))
-      (solve-it (concatenate 'list (collect-non-atoms (rest expression)) unchecked)
+      (dispatch-solution (concatenate 'list (collect-non-atoms (rest expression)) unchecked)
                 (concatenate 'list (rest expression) current-path))))
 
   (define-expression-handler not-and
@@ -139,7 +157,7 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
             (expr-list-prime (rest expr-list) (rest expr-list-prime)))
            ((or satp (null expr-prime)) satp)
         (when (not (has-conflict-p expr-prime current-path))
-          (setf satp (solve-it (non-atomic-add expr-prime unchecked)
+          (setf satp (dispatch-solution (non-atomic-add expr-prime unchecked)
                                (cons expr-prime current-path)))))))
 #+END_SRC
 
@@ -157,14 +175,14 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
            (expr-list (rest (rest expression)) (rest expr-list)))
           ((or satp (null expr)) satp)
         (when (not (has-conflict-p expr current-path))
-          (setf satp (solve-it (non-atomic-add expr unchecked)
+          (setf satp (dispatch-solution (non-atomic-add expr unchecked)
                                (cons expr current-path)))))))
 
   (define-expression-handler not-or
     (let ((expr-list (map 'list (lambda (expr) `(not ,expr))
                           (rest (second expression)))))
       (when (not (any-conflict-p expr-list current-path))
-        (solve-it (concatenate 'list (collect-non-atoms expr-list) unchecked)
+        (dispatch-solution (concatenate 'list (collect-non-atoms expr-list) unchecked)
                   (concatenate 'list expr-list current-path)))))
 #+END_SRC
 
@@ -181,15 +199,15 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
           (branch-b (third expression)))
       (cond
         ((not (has-conflict-p branch-a current-path))
-         (solve-it (non-atomic-add branch-a unchecked) (cons branch-a current-path)))
+         (dispatch-solution (non-atomic-add branch-a unchecked) (cons branch-a current-path)))
         ((not (has-conflict-p branch-b current-path))
-         (solve-it (non-atomic-add branch-b unchecked) (cons branch-b current-path)))
+         (dispatch-solution (non-atomic-add branch-b unchecked) (cons branch-b current-path)))
         (t nil))))
 
   (define-expression-handler not-implication
     (let ((the-expr-list (list (second (second expression)) `(not ,(third (second expression))))))
       (when (not (any-conflict-p the-expr-list current-path))
-        (solve-it (concatenate 'list (collect-non-atoms the-expr-list) unchecked)
+        (dispatch-solution (concatenate 'list (collect-non-atoms the-expr-list) unchecked)
                   (concatenate 'list the-expr-list current-path)))))
 #+END_SRC
 
@@ -206,10 +224,10 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
            (branch-b (map 'list (lambda (expr) `(not ,expr)) branch-a)))
       (cond
         ((not (any-conflict-p branch-a current-path))
-         (solve-it (concatenate 'list (collect-non-atoms branch-a) unchecked)
+         (dispatch-solution (concatenate 'list (collect-non-atoms branch-a) unchecked)
                    (concatenate 'list branch-a current-path)))
         ((not (any-conflict-p branch-b current-path))
-         (solve-it (concatenate 'list (collect-non-atoms branch-b) unchecked)
+         (dispatch-solution (concatenate 'list (collect-non-atoms branch-b) unchecked)
                    (concatenate 'list branch-b current-path)))
         (t nil))))
 
@@ -218,10 +236,10 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
           (branch-b (list `(not ,(second (second expression))) (third (second expression)))))
       (cond
         ((not (any-conflict-p branch-a current-path))
-         (solve-it (concatenate 'list (collect-non-atoms branch-a) unchecked)
+         (dispatch-solution (concatenate 'list (collect-non-atoms branch-a) unchecked)
                    (concatenate 'list branch-a current-path)))
         ((not (any-conflict-p branch-b current-path))
-         (solve-it (concatenate 'list (collect-non-atoms branch-b) unchecked)
+         (dispatch-solution (concatenate 'list (collect-non-atoms branch-b) unchecked)
                    (concatenate 'list branch-b current-path)))
         (t nil))))
 #+END_SRC
@@ -236,7 +254,7 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
 #+BEGIN_SRC lisp 
   (define-expression-handler double-not
     (let ((new (second (second expression))))
-      (solve-it (non-atomic-add new unchecked) (cons new current-path))))
+      (dispatch-solution (non-atomic-add new unchecked) (cons new current-path))))
 #+END_SRC
 
 * TODO Expression Classification
