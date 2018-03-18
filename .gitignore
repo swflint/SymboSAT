@@ -4,6 +4,10 @@
 !.gitmodules
 !.gitkeep
 
+*.lisp
+*.asd
+*.tex
+
 # Emacs Stuff
 *~
 \#*\#
@@ -52,8 +56,6 @@ flycheck_*.el
 *.FASL
 *.fasl
 *.lisp-temp
-
-*.lisp
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
