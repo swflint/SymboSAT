@@ -52,151 +52,6 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
 #+TOC: headlines 3
 #+TOC: listings
 
-* TODO Expression Classification
-:PROPERTIES:
-:ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
-:END:
-
-#+Caption: Expression Classification
-#+Name: expression-classification
-#+BEGIN_SRC lisp :tangle "classifier.lisp"
-  (in-package #:symbolic-sat-classifier)
-
-  (defvar *types* '())
-
-  (defmacro define-expression-type (type-name &rest predicate)
-    (check-type type-name symbol)
-    (let ((predicate-name (symbolicate type-name '-p)))
-      `(progn
-         (defun ,predicate-name (expression)
-           ,@predicate)
-         (pushnew '(,type-name . ,predicate-name) *types* :key #'first :test #'equal)
-         (export ',type-name)
-         ',type-name)))
-
-  (defun expression-type-p (expression-type expression)
-    (if (eq '* expression-type)
-        t
-        (funcall (cdr (assoc expression-type *types*))
-                 expression)))
-
-  <<not-classification>>
-  <<and-classification>>
-  <<or-classification>>
-  <<implication-classification>>
-  <<bicond-classification>>
-  <<atom-classification>>
-#+END_SRC
-
-** TODO Not
-:PROPERTIES:
-:ID:       4884bd62-39d8-487e-9b1d-36cb1a6b8372
-:END:
-
-#+Caption: Not Classification
-#+Name: not-classification
-#+BEGIN_SRC lisp 
-  (define-expression-type sentential-not
-      (and (listp expression)
-         (equal (first expression) 'not)
-         (= (length expression) 2)))
-
-  (define-expression-type double-not
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-not (second expression))))
-#+END_SRC
-
-** TODO And
-:PROPERTIES:
-:ID:       3ab30c56-7eda-4bb5-8e17-aa49587d7b81
-:END:
-
-#+Caption: And Classification
-#+Name: and-classification
-#+BEGIN_SRC lisp 
-  (define-expression-type sentential-and
-      (and (listp expression)
-         (equal (first expression) 'and)
-         (>= (length (rest expression)) 2)))
-
-  (define-expression-type not-and
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-and (second expression))))
-#+END_SRC
-
-** TODO Or
-:PROPERTIES:
-:ID:       d3c68b18-5f67-452c-ae9b-44285affe2a3
-:END:
-
-#+Caption: Or Classification
-#+Name: or-classification
-#+BEGIN_SRC lisp 
-  (define-expression-type sentential-or
-      (and (listp expression)
-         (equal (first expression) 'or)
-         (>= (length (rest expression)) 2)))
-
-  (define-expression-type not-or
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-or (second expression))))
-#+END_SRC
-
-** TODO Implication
-:PROPERTIES:
-:ID:       5df00489-662d-4579-b665-3e381113958d
-:END:
-
-#+Caption: Implication Classification
-#+Name: implication-classification
-#+BEGIN_SRC lisp 
-  (define-expression-type sentential-implication
-      (and (listp expression)
-         (equal 'implies (first expression))
-         (= (length (rest expression)) 2)))
-
-  (define-expression-type not-implication
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-implication (second expression))))
-#+END_SRC
-
-** TODO Biconditional
-:PROPERTIES:
-:ID:       a390b595-f794-4b1d-8233-376fc704c85c
-:END:
-
-#+Caption: Biconditional Classification
-#+Name: bicond-classification
-#+BEGIN_SRC lisp 
-  (define-expression-type sentential-biconditional
-      (and (listp expression)
-         (equal (first expression) 'iff)
-         (= (length (rest expression)) 2)))
-
-  (define-expression-type not-biconditional
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-biconditional (second expression))))
-#+END_SRC
-
-** TODO Other
-:PROPERTIES:
-:ID:       f80903bd-0afe-40fd-9c2f-48d458393483
-:END:
-
-#+Caption: Atom Classification
-#+Name: atom-classification
-#+BEGIN_SRC lisp 
-  (define-expression-type atom
-      (or (symbolp expression)
-         (and (expression-type-p 'sentential-not expression)
-            (symbolp (second expression)))))
-#+END_SRC
-
 * TODO Solver
 :PROPERTIES:
 :ID:       0883718a-8b30-4646-a496-9a67eb9d876c
@@ -382,6 +237,151 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
   (define-expression-handler double-not
     (let ((new (second (second expression))))
       (solve-it (non-atomic-add new unchecked) (cons new current-path))))
+#+END_SRC
+
+* TODO Expression Classification
+:PROPERTIES:
+:ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
+:END:
+
+#+Caption: Expression Classification
+#+Name: expression-classification
+#+BEGIN_SRC lisp :tangle "classifier.lisp"
+  (in-package #:symbolic-sat-classifier)
+
+  (defvar *types* '())
+
+  (defmacro define-expression-type (type-name &rest predicate)
+    (check-type type-name symbol)
+    (let ((predicate-name (symbolicate type-name '-p)))
+      `(progn
+         (defun ,predicate-name (expression)
+           ,@predicate)
+         (pushnew '(,type-name . ,predicate-name) *types* :key #'first :test #'equal)
+         (export ',type-name)
+         ',type-name)))
+
+  (defun expression-type-p (expression-type expression)
+    (if (eq '* expression-type)
+        t
+        (funcall (cdr (assoc expression-type *types*))
+                 expression)))
+
+  <<not-classification>>
+  <<and-classification>>
+  <<or-classification>>
+  <<implication-classification>>
+  <<bicond-classification>>
+  <<atom-classification>>
+#+END_SRC
+
+** TODO Not
+:PROPERTIES:
+:ID:       4884bd62-39d8-487e-9b1d-36cb1a6b8372
+:END:
+
+#+Caption: Not Classification
+#+Name: not-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-not
+      (and (listp expression)
+         (equal (first expression) 'not)
+         (= (length expression) 2)))
+
+  (define-expression-type double-not
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-not (second expression))))
+#+END_SRC
+
+** TODO And
+:PROPERTIES:
+:ID:       3ab30c56-7eda-4bb5-8e17-aa49587d7b81
+:END:
+
+#+Caption: And Classification
+#+Name: and-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-and
+      (and (listp expression)
+         (equal (first expression) 'and)
+         (>= (length (rest expression)) 2)))
+
+  (define-expression-type not-and
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-and (second expression))))
+#+END_SRC
+
+** TODO Or
+:PROPERTIES:
+:ID:       d3c68b18-5f67-452c-ae9b-44285affe2a3
+:END:
+
+#+Caption: Or Classification
+#+Name: or-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-or
+      (and (listp expression)
+         (equal (first expression) 'or)
+         (>= (length (rest expression)) 2)))
+
+  (define-expression-type not-or
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-or (second expression))))
+#+END_SRC
+
+** TODO Implication
+:PROPERTIES:
+:ID:       5df00489-662d-4579-b665-3e381113958d
+:END:
+
+#+Caption: Implication Classification
+#+Name: implication-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-implication
+      (and (listp expression)
+         (equal 'implies (first expression))
+         (= (length (rest expression)) 2)))
+
+  (define-expression-type not-implication
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-implication (second expression))))
+#+END_SRC
+
+** TODO Biconditional
+:PROPERTIES:
+:ID:       a390b595-f794-4b1d-8233-376fc704c85c
+:END:
+
+#+Caption: Biconditional Classification
+#+Name: bicond-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type sentential-biconditional
+      (and (listp expression)
+         (equal (first expression) 'iff)
+         (= (length (rest expression)) 2)))
+
+  (define-expression-type not-biconditional
+      (and (expression-type-p 'sentential-not expression)
+         (listp (second expression))
+         (expression-type-p 'sentential-biconditional (second expression))))
+#+END_SRC
+
+** TODO Other
+:PROPERTIES:
+:ID:       f80903bd-0afe-40fd-9c2f-48d458393483
+:END:
+
+#+Caption: Atom Classification
+#+Name: atom-classification
+#+BEGIN_SRC lisp 
+  (define-expression-type atom
+      (or (symbolp expression)
+         (and (expression-type-p 'sentential-not expression)
+            (symbolp (second expression)))))
 #+END_SRC
 
 * TODO Utilities
