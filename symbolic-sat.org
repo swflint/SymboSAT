@@ -394,6 +394,19 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
 #+BEGIN_SRC lisp :tangle "utils.lisp"
   (in-package #:symbolic-sat-utils)
 
+  <<clause-collection>>
+  <<conflict-checking>>
+  <<clause-adding>>
+#+END_SRC
+
+** TODO Clause Collection
+:PROPERTIES:
+:ID:       e93d0557-17ca-44a0-8ac8-23ef8db84272
+:END:
+
+#+Caption: Clause Collection
+#+Name: clause-collection
+#+BEGIN_SRC lisp 
   (defun collect-atoms (expr-list)
     (remove-duplicates (remove-if (lambda (expr)
                                     (not (expression-type-p 'atom expr)))
@@ -405,7 +418,16 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
                                     (expression-type-p 'atom expr))
                                   expr-list)
                        :test #'equal))
+#+END_SRC
 
+** TODO Conflict Checking
+:PROPERTIES:
+:ID:       cbb3a699-83af-460c-a6b0-dcb7f1ca9aef
+:END:
+
+#+Caption: Conflict Checking
+#+Name: conflict-checking
+#+BEGIN_SRC lisp 
   (defun has-conflict-p (current path)
     (or (member `(not ,current) path :test #'equal)
        (and (expression-type-p 'sentential-not current)
@@ -418,7 +440,16 @@ This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_co
              (null expr))
           (when (not (null expr))
             t))))
+#+END_SRC
 
+** TODO Clause Adding
+:PROPERTIES:
+:ID:       2cf45428-0740-4b08-bba8-68353a9b79f3
+:END:
+
+#+Caption: Clause Adding
+#+Name: clause-adding
+#+BEGIN_SRC lisp 
   (defun non-atomic-add (expr list)
     (if (not (expression-type-p 'atom expr))
         (cons expr list)
