@@ -265,7 +265,7 @@ This is organized as follows: handler storage, a recipe for handler definition, 
       (dispatch-solution (non-atomic-add new unchecked) (cons new current-path))))
 #+END_SRC
 
-* TODO Expression Classification
+* WORKING Expression Classification [0/8]
 :PROPERTIES:
 :ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
 :END:
@@ -277,6 +277,23 @@ This is organized as follows: handler storage, a recipe for handler definition, 
 
   (defvar *types* '())
 
+  <<expression-type-definition>>
+
+  <<expression-type-checking>>
+
+  <<not-classification>>
+  <<and-classification>>
+  <<or-classification>>
+  <<implication-classification>>
+  <<bicond-classification>>
+  <<atom-classification>>
+#+END_SRC
+
+** TODO Expression Type Definition
+
+#+Caption: Expression Type Definition
+#+Name: expression-type-definition
+#+BEGIN_SRC lisp 
   (defmacro define-expression-type (type-name &rest predicate)
     (check-type type-name symbol)
     (let ((predicate-name (symbolicate type-name '-p)))
@@ -286,19 +303,18 @@ This is organized as follows: handler storage, a recipe for handler definition, 
          (pushnew '(,type-name . ,predicate-name) *types* :key #'first :test #'equal)
          (export ',type-name)
          ',type-name)))
+#+END_SRC
 
+** TODO Expresion Type Checking
+
+#+Caption: Expression Type Checking
+#+Name: expression-type-checking
+#+BEGIN_SRC lisp 
   (defun expression-type-p (expression-type expression)
     (if (eq '* expression-type)
         t
         (funcall (cdr (assoc expression-type *types*))
                  expression)))
-
-  <<not-classification>>
-  <<and-classification>>
-  <<or-classification>>
-  <<implication-classification>>
-  <<bicond-classification>>
-  <<atom-classification>>
 #+END_SRC
 
 ** TODO Not
