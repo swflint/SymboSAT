@@ -84,10 +84,12 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
                        (list expression)))
 #+END_SRC
 
-** TODO Expression Handlers
+** WORKING Expression Handlers [0/7]
 :PROPERTIES:
 :ID:       99e68a1a-b3a4-40c5-9b2e-92d5e976d5bb
 :END:
+
+This is organized as follows: handler storage, a recipe for handler definition, handler dispatch and the the definition of the handlers themselves.
 
 #+Caption: Expression Handlers
 #+Name: expression-handlers
@@ -106,6 +108,9 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
 #+END_SRC
 
 *** TODO Defining Handlers
+:PROPERTIES:
+:ID:       2a90b9c3-585e-4347-89d7-78035e88e681
+:END:
 
 #+Caption: Defining Handlers
 #+Name: defining-handlers
@@ -120,6 +125,9 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
 #+END_SRC
 
 *** TODO Dispatching Handlers
+:PROPERTIES:
+:ID:       c4a9936b-d87a-4f78-87ef-fb81238cc41c
+:END:
 
 #+Caption: Dispatching Handlers
 #+Name: dispatching-handlers
