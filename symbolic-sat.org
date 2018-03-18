@@ -38,14 +38,14 @@
 * DONE Introduction                                                   :nonum:
 CLOSED: [2018-03-17 Sat 23:00]
 
-The following describes and implements a SAT solver for the five most common logical connectives ($\{\lnot, \land, \lor, \Rightarrow, \Leftrightarrow\}$).  It does so using the Tree Rules for Sentential Logic as described in \cite{klenk08:_under_symbol_logic}.  While it is written first and foremost for programmers and computer scientists, it's also an attempt at a well-documented program that would likely be of interest to logicians who seek to understand more about the actual construction of computer programs.  The organization is as follows:
+The following describes and implements a SAT solver for the five most common logical connectives ($\{\lnot, \land, \lor, \Rightarrow, \Leftrightarrow\}$).  It does so using the Tree Rules for Sentential Logic as described in [[cite:klenk08:_under_symbol_logic]].  While it is written first and foremost for programmers and computer scientists, it's also an attempt at a well-documented program that would likely be of interest to logicians who seek to understand more about the actual construction of computer programs.  The organization is as follows:
 
  1. Description and implementation of the Solver.  Although this builds on things defined later, this section is the bulk of the document and also the most interesting.
  2. A definition of an Expression Classifier.  This is used by the solver to help decide what steps to make as it attempts to solve a given instance of the SAT problem.
  3. A description of several utilities used in the Solver.  These utilities are not particularly interesting, but do help to abstract away certain common tasks used in the main solver.
  4. A description of how the software is packaged as a library.  This in and of itself is rather mundane, however it should help to further demonstrate the organization of software.
 
-This SAT solver is written in a language called Common Lisp (\cite{pitmann05:_common_lisp_hyper}), known well in the AI community.  For those unfamiliar, aside from the previously cited source several good resources are available (\cite{common_lisp_wikib,seibel05:_pract_common_lisp}).
+This SAT solver is written in a language called Common Lisp ([[cite:pitmann05:_common_lisp_hyper]]), known well in the AI community.  For those unfamiliar, aside from the previously cited source several good resources are available ([[cite:common_lisp_wikib,seibel05:_pract_common_lisp]]).
 
 * TOC                                                                :ignore:
 
@@ -565,5 +565,4 @@ This is organized as follows: handler storage, a recipe for handler definition, 
 
 * Bibliography                                                       :ignore:
 
-\bibliographystyle{plain}
-\bibliography{bibliography}
+#+BIBLIOGRAPHY: bibliography plain
