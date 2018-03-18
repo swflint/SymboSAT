@@ -49,8 +49,10 @@
 
 #+Caption: Expression Classification
 #+Name: expression-classification
-#+BEGIN_SRC lisp
-  (defvar *expression-types* '())
+#+BEGIN_SRC lisp :tangle "classifier.lisp"
+  (in-package #:symbolic-sat-classifier)
+
+  (defvar *types* '())
 
   (defmacro define-expression-type (type-name &rest predicate)
     (check-type type-name symbol)
@@ -58,14 +60,14 @@
       `(progn
          (defun ,predicate-name (expression)
            ,@predicate)
-         (pushnew '(,type-name . ,predicate-name) *expression-types* :key #'first :test #'equal)
+         (pushnew '(,type-name . ,predicate-name) *types* :key #'first :test #'equal)
          (export ',type-name)
          ',type-name)))
 
   (defun expression-type-p (expression-type expression)
     (if (eq '* expression-type)
         t
-        (funcall (cdr (assoc expression-type *expression-types*))
+        (funcall (cdr (assoc expression-type *types*))
                  expression)))
 
   <<not-classification>>
@@ -185,7 +187,21 @@
             (symbolp (second expression)))))
 #+END_SRC
 
-* TODO Driver
+* TODO Solver
+:PROPERTIES:
+:ID:       0883718a-8b30-4646-a496-9a67eb9d876c
+:END:
+
+#+Caption: Solver
+#+Name: solver
+#+BEGIN_SRC lisp :tangle "solver.lisp"
+  (in-package #:symbolic-sat)
+
+  <<expression-handlers>>
+  <<driver>>
+#+END_SRC
+
+** TODO Driver
 :PROPERTIES:
 :ID:       d448fc32-6def-404b-a2b1-23f74dd28a40
 :END:
@@ -205,7 +221,7 @@
               (list expression)))
 #+END_SRC
 
-* TODO Expression Handlers
+** TODO Expression Handlers
 :PROPERTIES:
 :ID:       99e68a1a-b3a4-40c5-9b2e-92d5e976d5bb
 :END:
@@ -213,19 +229,19 @@
 #+Caption: Expression Handlers
 #+Name: expression-handlers
 #+BEGIN_SRC lisp 
-  (defvar *expression-handlers* '())
+  (defvar *handlers* '())
 
   (defmacro define-expression-handler (expression-type &body handler)
     (let ((name (symbolicate 'handle- expression-type)))
       `(progn
          (defun ,name (expression unchecked current-path)
            ,@handler)
-         (pushnew '(,expression-type . ,name) *expression-handlers* :key #'first)
+         (pushnew '(,expression-type . ,name) *handlers* :key #'first)
          ',expression-type)))
 
   (defun dispatch-on (expression unchecked current-path)
-    (do* ((pair (first *expression-handlers*) (first remaining))
-          (remaining (rest *expression-handlers*) (rest remaining)))
+    (do* ((pair (first *handlers*) (first remaining))
+          (remaining (rest *handlers*) (rest remaining)))
          ((or (null pair)
              (expression-type-p (car pair) expression))
           (when (not (null pair))
@@ -238,7 +254,7 @@
   <<doubled-not-handler>>
 #+END_SRC
 
-** TODO And
+*** TODO And
 :PROPERTIES:
 :ID:       e630fba3-005d-474e-88e5-0acb61f66ab1
 :END:
@@ -247,7 +263,7 @@
 #+Name: and-handlers
 #+BEGIN_SRC lisp
   (define-expression-handler sentential-and
-    (when (not (any-close (rest expression) current-path))
+    (when (not (any-conflict-p (rest expression) current-path))
       (solve-it (concatenate 'list (collect-non-atoms (rest expression)) unchecked)
                 (concatenate 'list (rest expression) current-path))))
 
@@ -257,12 +273,12 @@
       (do* ((expr-prime (first expr-list) (first expr-list-prime))
             (expr-list-prime (rest expr-list) (rest expr-list-prime)))
            ((or satp (null expr-prime)) satp)
-        (when (not (close-tree-p expr-prime current-path))
+        (when (not (has-conflict-p expr-prime current-path))
           (setf satp (solve-it (non-atomic-add expr-prime unchecked)
                                (cons expr-prime current-path)))))))
 #+END_SRC
 
-** TODO Or
+*** TODO Or
 :PROPERTIES:
 :ID:       e148ef8b-8287-4930-a489-187fea5a63c0
 :END:
@@ -275,19 +291,19 @@
       (do ((expr (first (rest expression)) (first expr-list))
            (expr-list (rest (rest expression)) (rest expr-list)))
           ((or satp (null expr)) satp)
-        (when (not (close-tree-p expr current-path))
+        (when (not (has-conflict-p expr current-path))
           (setf satp (solve-it (non-atomic-add expr unchecked)
                                (cons expr current-path)))))))
 
   (define-expression-handler not-or
     (let ((expr-list (map 'list (lambda (expr) `(not ,expr))
                           (rest (second expression)))))
-      (when (not (any-close expr-list current-path))
+      (when (not (any-conflict-p expr-list current-path))
         (solve-it (concatenate 'list (collect-non-atoms expr-list) unchecked)
                   (concatenate 'list expr-list current-path)))))
 #+END_SRC
 
-** TODO Implication
+*** TODO Implication
 :PROPERTIES:
 :ID:       a2eb81f5-c834-4529-b367-f618e877a817
 :END:
@@ -299,20 +315,20 @@
     (let ((branch-a `(not ,(second expression)))
           (branch-b (third expression)))
       (cond
-        ((not (close-tree-p branch-a current-path))
+        ((not (has-conflict-p branch-a current-path))
          (solve-it (non-atomic-add branch-a unchecked) (cons branch-a current-path)))
-        ((not (close-tree-p branch-b current-path))
+        ((not (has-conflict-p branch-b current-path))
          (solve-it (non-atomic-add branch-b unchecked) (cons branch-b current-path)))
         (t nil))))
 
   (define-expression-handler not-implication
     (let ((the-expr-list (list (second (second expression)) `(not ,(third (second expression))))))
-      (when (not (any-close the-expr-list current-path))
+      (when (not (any-conflict-p the-expr-list current-path))
         (solve-it (concatenate 'list (collect-non-atoms the-expr-list) unchecked)
                   (concatenate 'list the-expr-list current-path)))))
 #+END_SRC
 
-** TODO Biconditional
+*** TODO Biconditional
 :PROPERTIES:
 :ID:       3a765282-de1f-450b-8d45-e3cf270886d0
 :END:
@@ -324,10 +340,10 @@
     (let* ((branch-a (rest expression))
            (branch-b (map 'list (lambda (expr) `(not ,expr)) branch-a)))
       (cond
-        ((not (any-close branch-a current-path))
+        ((not (any-conflict-p branch-a current-path))
          (solve-it (concatenate 'list (collect-non-atoms branch-a) unchecked)
                    (concatenate 'list branch-a current-path)))
-        ((not (any-close branch-b current-path))
+        ((not (any-conflict-p branch-b current-path))
          (solve-it (concatenate 'list (collect-non-atoms branch-b) unchecked)
                    (concatenate 'list branch-b current-path)))
         (t nil))))
@@ -336,16 +352,19 @@
     (let ((branch-a (list (second (second expression)) `(not ,(third (second expression)))))
           (branch-b (list `(not ,(second (second expression))) (third (second expression)))))
       (cond
-        ((not (any-close branch-a current-path))
+        ((not (any-conflict-p branch-a current-path))
          (solve-it (concatenate 'list (collect-non-atoms branch-a) unchecked)
                    (concatenate 'list branch-a current-path)))
-        ((not (any-close branch-b current-path))
+        ((not (any-conflict-p branch-b current-path))
          (solve-it (concatenate 'list (collect-non-atoms branch-b) unchecked)
                    (concatenate 'list branch-b current-path)))
         (t nil))))
 #+END_SRC
 
-** TODO Doubled Not
+*** TODO Doubled Not
+:PROPERTIES:
+:ID:       2edb4da5-08f1-430c-b96b-c96628805602
+:END:
 
 #+Caption: Doubled Not Handler
 #+Name: doubled-not-handler
@@ -362,7 +381,9 @@
 
 #+Caption: Utilities
 #+Name: utils
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp :tangle "utils.lisp"
+  (in-package #:symbolic-sat-utils)
+
   (defun collect-atoms (expr-list)
     (remove-duplicates (remove-if (lambda (expr)
                                     (not (expression-type-p 'atom expr)))
@@ -375,15 +396,15 @@
                                   expr-list)
                        :test #'equal))
 
-  (defun close-tree-p (current path)
+  (defun has-conflict-p (current path)
     (or (member `(not ,current) path :test #'equal)
        (and (expression-type-p 'sentential-not current)
           (member (second current) path :test #'equal))))
 
-  (defun any-close (expr-list path)
+  (defun any-conflict-p (expr-list path)
     (do* ((expr (first expr-list) (first expr-list-prime))
           (expr-list-prime (rest expr-list) (rest expr-list-prime)))
-         ((or (close-tree-p expr path)
+         ((or (has-conflict-p expr path)
              (null expr))
           (when (not (null expr))
             t))))
@@ -399,24 +420,62 @@
 :ID:       ca73d4ab-45ba-4e7c-819a-b87d6a529083
 :END:
 
-#+Caption: Packaging
-#+Name: packaging
-#+BEGIN_SRC lisp :tangle "symbolic-sat.lisp"
-  (ql:quickload :alexandria)
+** TODO Package Definition
+:PROPERTIES:
+:ID:       3ac44dcd-3417-4b45-819c-54bef90f8145
+:END:
 
-  (defpackage #:symbolic-sat
+#+Caption: Package Definitions
+#+Name: package-definitions
+#+BEGIN_SRC lisp :tangle "packages.lisp"
+  (defpackage #:symbolic-sat-common-symbols
     (:use #:cl)
+    (:export #:implies
+             #:iff))
+
+  (defpackage #:symbolic-sat-classifier
+    (:use #:cl
+          #:symbolic-sat-common-symbols)
     (:import-from #:alexandria
                   #:symbolicate)
-    (:export #:expression-type-p
-             #:implies
-             #:iff
-             #:solve))
+    (:export #:expression-type-p))
 
-  (in-package #:symbolic-sat)
+  (defpackage #:symbolic-sat-utils
+    (:use #:cl
+          #:symbolic-sat-common-symbols
+          #:symbolic-sat-classifier)
+    (:export #:collect-atoms
+             #:collect-non-atoms
+             #:has-conflict-p
+             #:any-conflict-p
+             #:non-atomic-add))
 
-  <<expression-classification>>
-  <<utils>>
-  <<expression-handlers>>
-  <<driver>>
+  (defpackage #:symbolic-sat
+    (:use #:cl
+          #:symbolic-sat-classifier
+          #:symbolic-sat-common-symbols
+          #:symbolic-sat-utils)
+    (:import-from #:alexandria
+                  #:symbolicate)
+    (:export #:solve))
+#+END_SRC
+
+** TODO System Definition
+:PROPERTIES:
+:ID:       f0b739ff-07ef-4322-93f3-5dced945540e
+:END:
+
+#+Caption: System Definition
+#+Name: system-definition
+#+BEGIN_SRC lisp :tangle "symbolic-sat.asd"
+  (asdf:defsystem #:symbolic-sat
+    :description "A basic Symbolic SAT solver using the Tableaux (tree) method for Sentential Logic."
+    :author "Samuel Flint <swflint@flintfam.org>"
+    :license "GNU GPLv3 or Later"
+    :depends-on (#:alexandria)
+    :serial t
+    :components ((:file "packages")
+                 (:file "classifier")
+                 (:file "utils")
+                 (:file "solver")))
 #+END_SRC
