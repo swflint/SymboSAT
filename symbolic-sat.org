@@ -57,7 +57,7 @@ This SAT solver is written in a language called Common Lisp [[cite:CommonLi93:on
 :ID:       0883718a-8b30-4646-a496-9a67eb9d876c
 :END:
 
-The solver itself is composed of two components, the driver and expression handlers.  The driver is used to dispatch based on the type of expression for expressions that have yet to be handled, and expression handlers actually deal with the expressions
+The solver is built primarily on three components, a driver (which is itself a shim upon a dispatcher), a dispatcher (which selects which expression handler to use based on the type of expression at hand) and expression handlers (which apply the various tree rules).
 
 #+Caption: Solver
 #+Name: solver
