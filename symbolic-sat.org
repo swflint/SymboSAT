@@ -80,8 +80,10 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
 #+Name: driver
 #+BEGIN_SRC lisp 
   (defun solve (expression)
-    (dispatch-solution (non-atomic-add expression (list))
-                       (list expression)))
+    (let ((solution (dispatch-solution (non-atomic-add expression (list))
+                                       (list expression))))
+      (when (not (null solution))
+        (sort-atoms solution))))
 #+END_SRC
 
 ** WORKING Expression Handlers [0/7]
@@ -290,6 +292,9 @@ This is organized as follows: handler storage, a recipe for handler definition, 
 #+END_SRC
 
 ** TODO Expression Type Definition
+:PROPERTIES:
+:ID:       62fee56e-3f7c-4575-a870-326a53e939d4
+:END:
 
 #+Caption: Expression Type Definition
 #+Name: expression-type-definition
@@ -306,6 +311,9 @@ This is organized as follows: handler storage, a recipe for handler definition, 
 #+END_SRC
 
 ** TODO Expresion Type Checking
+:PROPERTIES:
+:ID:       34540858-636e-4336-89e7-63dca947c739
+:END:
 
 #+Caption: Expression Type Checking
 #+Name: expression-type-checking
@@ -426,7 +434,7 @@ This is organized as follows: handler storage, a recipe for handler definition, 
             (symbolp (second expression)))))
 #+END_SRC
 
-* WORKING Utilities [0/3]
+* WORKING Utilities [0/4]
 :PROPERTIES:
 :ID:       1c6e6f57-1c3e-4a9f-bd08-6223fc83e4f9
 :END:
@@ -439,6 +447,7 @@ This is organized as follows: handler storage, a recipe for handler definition, 
   <<clause-collection>>
   <<conflict-checking>>
   <<clause-adding>>
+  <<sort-atoms>>
 #+END_SRC
 
 ** TODO Clause Collection
@@ -498,6 +507,23 @@ This is organized as follows: handler storage, a recipe for handler definition, 
         list))
 #+END_SRC
 
+** TODO Sort Atoms
+:PROPERTIES:
+:ID:       5cdb7bfe-eba9-4d26-b7ac-a8aa9eea2280
+:END:
+
+#+Caption: Sort Atoms
+#+Name: sort-atoms
+#+BEGIN_SRC lisp 
+  (defun sort-atoms (atoms-list)
+    (flet ((atom-less-than-p (atom-a atom-b)
+             (let ((aa (if (atom atom-a) atom-a (second atom-a)))
+                   (ab (if (atom atom-b) atom-b (second atom-b))))
+               (string<= (format nil "~A" aa)
+                         (format nil "~A" ab)))))
+      (sort atoms-list #'atom-less-than-p)))
+#+END_SRC
+
 * WORKING Packaging [0/2]
 :PROPERTIES:
 :ID:       ca73d4ab-45ba-4e7c-819a-b87d6a529083
@@ -531,7 +557,8 @@ This is organized as follows: handler storage, a recipe for handler definition, 
              #:collect-non-atoms
              #:has-conflict-p
              #:any-conflict-p
-             #:non-atomic-add))
+             #:non-atomic-add
+             #:sort-atoms))
 
   (defpackage #:symbolic-sat
     (:use #:cl
