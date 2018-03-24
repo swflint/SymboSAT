@@ -86,7 +86,7 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
         (sort-atoms solution))))
 #+END_SRC
 
-** WORKING Expression Handlers [1/7]
+** WORKING Expression Handlers [2/7]
 :PROPERTIES:
 :ID:       99e68a1a-b3a4-40c5-9b2e-92d5e976d5bb
 :END:
@@ -129,10 +129,13 @@ This macro (~define-expression-handler~) takes two arguments, an expression type
          ',expression-type)))
 #+END_SRC
 
-*** TODO Dispatching Handlers
+*** DONE Dispatching Handlers
+CLOSED: [2018-03-23 Fri 21:59]
 :PROPERTIES:
 :ID:       c4a9936b-d87a-4f78-87ef-fb81238cc41c
 :END:
+
+These 11 lines are the most important in the application.  This is what's used to cause a handler to be selected and called, or to decide if a solution has been found.  This is done by first checking if the list of unchecked expressions is empty, and if so, simply collecting all atoms in the current path.  Otherwise, it takes the top expression from ~unchecked~, and rebinds ~unchecked~ to the rest of itself, and then looks for a handler.  This is done by looking at those available, and if the current expression is of the given type, ending by applying that handler to the current expression.
 
 #+Caption: Dispatching Handlers
 #+Name: dispatching-handlers
