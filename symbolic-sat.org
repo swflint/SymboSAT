@@ -86,7 +86,7 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
         (sort-atoms solution))))
 #+END_SRC
 
-** WORKING Expression Handlers [0/7]
+** WORKING Expression Handlers [1/7]
 :PROPERTIES:
 :ID:       99e68a1a-b3a4-40c5-9b2e-92d5e976d5bb
 :END:
@@ -109,10 +109,13 @@ This is organized as follows: handler storage, a recipe for handler definition, 
   <<doubled-not-handler>>
 #+END_SRC
 
-*** TODO Defining Handlers
+*** DONE Defining Handlers
+CLOSED: [2018-03-23 Fri 21:47]
 :PROPERTIES:
 :ID:       2a90b9c3-585e-4347-89d7-78035e88e681
 :END:
+
+This macro (~define-expression-handler~) takes two arguments, an expression type and a handler body.  It uses the type to create a name for the handler itself, and the defines a function with that name, taking three arguments: the current expression, the list of unchecked expressions and the current path.  It then places the handler body in the function, pushes a single cell of the expression type and the handler name onto the handler storage list, and returns the expression type.
 
 #+Caption: Defining Handlers
 #+Name: defining-handlers
