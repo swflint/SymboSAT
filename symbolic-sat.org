@@ -36,16 +36,16 @@
 #+END_SRC
 
 * DONE Introduction                                                   :nonum:
-CLOSED: [2018-03-17 Sat 23:00]
+CLOSED: [2018-03-23 Fri 21:53]
 
-The following describes and implements a SAT solver for the five most common logical connectives ($\{\lnot, \land, \lor, \Rightarrow, \Leftrightarrow\}$).  It does so using the Tree Rules for Sentential Logic as described in [[cite:klenk08:_under_symbol_logic]].  While it is written first and foremost for programmers and computer scientists, it's also an attempt at a well-documented program that would likely be of interest to logicians who seek to understand more about the actual construction of computer programs.  The organization is as follows:
+The following describes and implements a SAT solver for the five most common logical connectives ($\{\lnot, \land, \lor, \Rightarrow, \Leftrightarrow\}$) without requiring an expression to be in a specific normal form.  It does so using the Tree Rules for Sentential Logic as described in [[cite:klenk08:_under_symbol_logic]].  While it is written first and foremost for programmers and computer scientists, it's also an attempt at a well-documented program that would likely be of interest to logicians who seek to understand more about the actual construction of computer programs.  The organization is as follows:
 
  1. Description and implementation of the Solver.  Although this builds on things defined later, this section is the bulk of the document and also the most interesting.
  2. A definition of an Expression Classifier.  This is used by the solver to help decide what steps to make as it attempts to solve a given instance of the SAT problem.
  3. A description of several utilities used in the Solver.  These utilities are not particularly interesting, but do help to abstract away certain common tasks used in the main solver.
  4. A description of how the software is packaged as a library.  This in and of itself is rather mundane, however it should help to further demonstrate the organization of software.
 
-This SAT solver is written in a language called Common Lisp [[cite:CommonLi93:online]], known well in the AI community.  For those unfamiliar, aside from the previously cited source several good resources are available [[cite:CommonLi95:online,seibel05:_pract_common_lisp]].
+Because of the nature of the problem at hand, this is written using the Common Lisp language [[cite:CommonLi93:online]], which is known in the Artificial Intelligence community.  It was chosen for three primary reasons: a) the author's familiarity; b) incredible support for symbolic processing; and c) excellent support for several forms of meta-programming, one of which (template-based meta-programming) is used in this program.  As this document is in part for those outside of programming [[cite:CommonLi95:online,seibel05:_pract_common_lisp]] provide for excelent reference, as does the above mentioned specification. 
 
 * TOC                                                                :ignore:
 
