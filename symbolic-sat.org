@@ -530,7 +530,7 @@ These 11 lines are the most important in the application.  This is what's used t
       (sort atoms-list #'atom-less-than-p)))
 #+END_SRC
 
-* WORKING Packaging [1/2]
+* DONE Packaging [2/2]
 :PROPERTIES:
 :ID:       ca73d4ab-45ba-4e7c-819a-b87d6a529083
 :END:
@@ -586,10 +586,13 @@ Symbolic SAT is composed of four packages, as follows:
     (:export #:solve))
 #+END_SRC
 
-** TODO System Definition
+** DONE System Definition
+CLOSED: [2018-05-28 Mon 10:16]
 :PROPERTIES:
 :ID:       f0b739ff-07ef-4322-93f3-5dced945540e
 :END:
+
+This defines the ASDF system, called ~#:symbolic-sat~, having a description, an author, and a license as properties.  It states that it depends on ~#:alexandria~, a utilities collection.  It further states that the components (as defined by the expression following ~:components~) must be loaded in that order with ~:serial t~.
 
 #+Caption: System Definition
 #+Name: system-definition
