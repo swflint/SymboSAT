@@ -530,17 +530,25 @@ These 11 lines are the most important in the application.  This is what's used t
       (sort atoms-list #'atom-less-than-p)))
 #+END_SRC
 
-* WORKING Packaging [0/2]
+* WORKING Packaging [1/2]
 :PROPERTIES:
 :ID:       ca73d4ab-45ba-4e7c-819a-b87d6a529083
 :END:
 
 As a software library, packaging is important.  In Common Lisp, it's done using system packages and something called ASDF (A System Definition Facility) to enable the library to be loaded correctly and quickly.
 
-** TODO Package Definition
+** DONE Package Definition
+CLOSED: [2018-05-28 Mon 10:05]
 :PROPERTIES:
 :ID:       3ac44dcd-3417-4b45-819c-54bef90f8145
 :END:
+
+Symbolic SAT is composed of four packages, as follows:
+
+ - ~symbolic-sat-common-symbols~ :: This package exports two symbols that are used and in common for all other packages.  These symbols also provide a part of the external API.
+ - ~symbolic-sat-classifier~ :: This package provides an API for classifying expressions -- deciding what type of expression is at hand.  It requires the use of the Common Lisp package (providing all basic symbols as defined in the standard), and the previous common symbols package.  It also uses ~symbolicate~ from Alexandria to mash symbols together for use in automatically generated function and variable names.  It directly exports one symbol, ~expression-type-p~ which is better described in Section [[id:34540858-636e-4336-89e7-63dca947c739]].
+ - ~symbolic-sat-utils~ :: Another utility package, the functions exported are well defined in Section [[id:1c6e6f57-1c3e-4a9f-bd08-6223fc83e4f9]], but it builds on the previous two packages, and exports the named symbols.
+ - ~symbolic-sat~ :: This is the final package, providing perhaps, the most important part of the API, ~solve~.  It builds upon all three prior packages, and again uses ~symbolicate~ for mashing symbols together.
 
 #+Caption: Package Definitions
 #+Name: package-definitions
