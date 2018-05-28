@@ -535,6 +535,8 @@ These 11 lines are the most important in the application.  This is what's used t
 :ID:       ca73d4ab-45ba-4e7c-819a-b87d6a529083
 :END:
 
+As a software library, packaging is important.  In Common Lisp, it's done using system packages and something called ASDF (A System Definition Facility) to enable the library to be loaded correctly and quickly.
+
 ** TODO Package Definition
 :PROPERTIES:
 :ID:       3ac44dcd-3417-4b45-819c-54bef90f8145
