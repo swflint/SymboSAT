@@ -288,7 +288,7 @@ These 11 lines are the most important in the application.  This is what's used t
       (dispatch-solution (non-atomic-add new unchecked) (cons new current-path))))
 #+END_SRC
 
-* WORKING Expression Classification [0/9]
+* WORKING Expression Classification [1/9]
 :PROPERTIES:
 :ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
 :END:
@@ -316,10 +316,13 @@ For the solver to work correctly, it needs to decide what kind of expressions it
   <<atom-classification>>
 #+END_SRC
 
-** TODO Expression Type Definition
+** DONE Expression Type Definition
+CLOSED: [2019-07-12 Fri 13:19]
 :PROPERTIES:
 :ID:       62fee56e-3f7c-4575-a870-326a53e939d4
 :END:
+
+To even be able to check types, we need to define types.  This is done with the ~define-expression-type~ macro, which takes the name of the type, its "branchiness" (more on that in other sections), and a predicate body.  It expands to define the predicate, updates the types list with relevant information (name, predicate name, branchiness), and exports the type name from the package (making it available to others).
 
 #+Caption: Expression Type Definition
 #+Name: expression-type-definition
