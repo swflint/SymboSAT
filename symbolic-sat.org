@@ -9,6 +9,7 @@
 #+LATEX_CLASS_OPTIONS: [10pt,twoside,paper=letter,DIV=14]
 #+LATEX_HEADER: \usepackage[style=numeric-comp]{biblatex}
 #+LATEX_HEADER: \addbibresource{bibliography.bib}
+#+LATEX_HEADER: \usepackage[plextt,closedroot]{mycommon}
 
 * Export                                                           :noexport:
 
