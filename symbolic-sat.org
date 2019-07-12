@@ -83,7 +83,7 @@ The driver itself is a simple shim on top of the handler dispatch facility.  As 
         (sort-atoms solution))))
 #+END_SRC
 
-** WORKING Expression Handlers [2/7]
+** WORKING Expression Handlers [2/8]
 :PROPERTIES:
 :ID:       99e68a1a-b3a4-40c5-9b2e-92d5e976d5bb
 :END:
@@ -96,6 +96,8 @@ This is organized as follows: handler storage, a recipe for handler definition, 
   (defvar *handlers* '())
 
   <<defining-handlers>>
+
+  <<pick-next-expression>>
 
   <<dispatching-handlers>>
 
@@ -140,14 +142,30 @@ These 11 lines are the most important in the application.  This is what's used t
   (defun dispatch-solution (unchecked current-path)
     (if (null unchecked)
         (collect-atoms current-path)
-        (let ((expression (first unchecked))
-              (unchecked (rest unchecked)))
+        (multiple-value-bind (expression unchecked) (pick-next-expression unchecked)
           (do* ((pair (first *handlers*) (first remaining))
                 (remaining (rest *handlers*) (rest remaining)))
                ((or (null pair)
                    (expression-type-p (car pair) expression))
                 (when (not (null pair))
                   (funcall (cdr pair) expression unchecked current-path)))))))
+#+END_SRC
+
+*** TODO Pick Next Expression
+:PROPERTIES:
+:ID:       80b62141-8f31-4528-95a1-63c014936932
+:END:
+
+#+Caption: Pick Next Expression
+#+Name: pick-next-expression
+#+BEGIN_SRC lisp 
+  (defun pick-next-expression (unchecked-expressions)
+    (let (next-expression)
+      (do ((branchiness 0 (1+ branchiness)))
+          ((or (not (null next-expression))
+              (> branchiness 2)))
+        (setf next-expression (first (remove-if (complement (is-branchy-as branchiness)) unchecked-expressions))))
+      (values next-expression (remove next-expression unchecked-expressions :test #'equal))))
 #+END_SRC
 
 *** TODO And
