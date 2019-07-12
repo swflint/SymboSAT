@@ -288,7 +288,7 @@ These 11 lines are the most important in the application.  This is what's used t
       (dispatch-solution (non-atomic-add new unchecked) (cons new current-path))))
 #+END_SRC
 
-* WORKING Expression Classification [2/9]
+* WORKING Expression Classification [3/9]
 :PROPERTIES:
 :ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
 :END:
@@ -357,10 +357,17 @@ Expressions are checked for their type with ~expression-type-p~, which takes a t
                  expression)))
 #+END_SRC
 
-** TODO Check Branchiness
+** DONE Check Branchiness
+CLOSED: [2019-07-12 Fri 14:13]
 :PROPERTIES:
 :ID:       5c404f5f-0782-460e-bb57-a6222977bd1a
 :END:
+
+An expression's "branchiness" is a value that (generally) is in the range \([-1, 2]\) (with some outliers for things that are used as helper types).  This tells the algorithm how likely an expression is to create branches in the tree.  To be able to use this, we have two functions: ~has-branchiness-p~ and ~is-branchy-as~.
+
+~has-branchiness-p~ operates by first finding the predicates for types with the given ~branchiness~.  It then goes through these tests, one-by-one, returning the type entry if it passes, going on to the next otherwise.  If eventually the test object itself is simply ~nil~, it terminates, letting us know that the ~expression~ does not have the given ~branchiness~ value.
+
+~is-branchy-as~ works as a wrapper to create functions that can be used in various filtering functions (~remove-if~, /etc./).
 
 #+Caption: Check Expression Branchiness
 #+Name: expression-branchiness-check
