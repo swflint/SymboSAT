@@ -549,8 +549,7 @@ An expression's "branchiness" is a value that (generally) is in the range \([-1,
           (expr-list-prime (rest expr-list) (rest expr-list-prime)))
          ((or (has-conflict-p expr path)
              (null expr))
-          (when (not (null expr))
-            t))))
+          (not (null expr)))))
 #+END_SRC
 
 ** TODO Clause Adding
