@@ -504,19 +504,19 @@ An expression's "branchiness" is a value that (generally) is in the range \([-1,
 #+BEGIN_SRC lisp :tangle "utils.lisp"
   (in-package #:symbolic-sat-utils)
 
-  <<clause-collection>>
+  <<expression-collection>>
   <<conflict-checking>>
   <<expression-adding>>
   <<sort-atoms>>
 #+END_SRC
 
-** TODO Clause Collection
+** TODO Expression Collection
 :PROPERTIES:
 :ID:       e93d0557-17ca-44a0-8ac8-23ef8db84272
 :END:
 
-#+Caption: Clause Collection
-#+Name: clause-collection
+#+Caption: Expression Collection
+#+Name: expression-collection
 #+BEGIN_SRC lisp 
   (defun collect-atoms (expr-list)
     (remove-duplicates (remove-if (lambda (expr)
