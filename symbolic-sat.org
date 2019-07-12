@@ -293,6 +293,8 @@ These 11 lines are the most important in the application.  This is what's used t
 :ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
 :END:
 
+For the solver to work correctly, it needs to decide what kind of expressions it's looking at.  To do that, it uses a few relatively simple tests to choose or determine expression type.  These are defined here.
+
 #+Caption: Expression Classification
 #+Name: expression-classification
 #+BEGIN_SRC lisp :tangle "classifier.lisp"
