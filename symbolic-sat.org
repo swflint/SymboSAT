@@ -494,7 +494,7 @@ An expression's "branchiness" is a value that (generally) is in the range \([-1,
           (symbolp (second expression)))))
 #+END_SRC
 
-* WORKING Utilities [0/4]
+* WORKING Utilities [1/4]
 :PROPERTIES:
 :ID:       1c6e6f57-1c3e-4a9f-bd08-6223fc83e4f9
 :END:
@@ -552,10 +552,13 @@ An expression's "branchiness" is a value that (generally) is in the range \([-1,
           (not (null expr)))))
 #+END_SRC
 
-** TODO Clause Adding
+** DONE Clause Adding
+CLOSED: [2019-07-12 Fri 14:18]
 :PROPERTIES:
 :ID:       2cf45428-0740-4b08-bba8-68353a9b79f3
 :END:
+
+To simplify some things in the solver (adding expressions to the list of unchecked), we take an expression, and a list of other expressions.  If the expression is not an ~atom~ (recall the various types), it ~cons~'s it on to the front of the list, or returns just the list with no modifications.
 
 #+Caption: Clause Adding
 #+Name: clause-adding
