@@ -270,7 +270,7 @@ These 11 lines are the most important in the application.  This is what's used t
       (dispatch-solution (non-atomic-add new unchecked) (cons new current-path))))
 #+END_SRC
 
-* WORKING Expression Classification [0/8]
+* WORKING Expression Classification [0/9]
 :PROPERTIES:
 :ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
 :END:
@@ -285,6 +285,8 @@ These 11 lines are the most important in the application.  This is what's used t
   <<expression-type-definition>>
 
   <<expression-type-checking>>
+
+  <<expression-branchiness-check>>
 
   <<not-classification>>
   <<and-classification>>
@@ -302,13 +304,14 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: Expression Type Definition
 #+Name: expression-type-definition
 #+BEGIN_SRC lisp 
-  (defmacro define-expression-type (type-name &rest predicate)
+  (defmacro define-expression-type (type-name branchiness &body predicate)
     (check-type type-name symbol)
+    (check-type branchiness integer)
     (let ((predicate-name (symbolicate type-name '-p)))
       `(progn
          (defun ,predicate-name (expression)
            ,@predicate)
-         (pushnew '(,type-name . ,predicate-name) *types* :key #'first :test #'equal)
+         (pushnew '(,type-name ,predicate-name ,branchiness) *types* :key #'first :test #'equal)
          (export ',type-name)
          ',type-name)))
 #+END_SRC
@@ -324,8 +327,29 @@ These 11 lines are the most important in the application.  This is what's used t
   (defun expression-type-p (expression-type expression)
     (if (eq '* expression-type)
         t
-        (funcall (cdr (assoc expression-type *types*))
+        (funcall (second (assoc expression-type *types*))
                  expression)))
+#+END_SRC
+
+** TODO Check Branchiness
+:PROPERTIES:
+:ID:       5c404f5f-0782-460e-bb57-a6222977bd1a
+:END:
+
+#+Caption: Check Expression Branchiness
+#+Name: expression-branchiness-check
+#+BEGIN_SRC lisp 
+  (defun has-branchiness-p (branchiness expression)
+    (let ((tests (remove-if (lambda (x) (/= branchiness x)) *types* :key #'third)))
+      (do* ((test (first tests) (first tests-prime))
+            (tests-prime (rest tests) (rest tests-prime)))
+           ((or (null test)
+               (funcall (second test) expression))
+            test))))
+
+  (defun is-branchy-as (branchiness)
+    (lambda (expression)
+      (has-branchiness-p branchiness expression)))
 #+END_SRC
 
 ** TODO Not
@@ -336,15 +360,15 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: Not Classification
 #+Name: not-classification
 #+BEGIN_SRC lisp 
-  (define-expression-type sentential-not
-      (and (listp expression)
-         (equal (first expression) 'not)
-         (= (length expression) 2)))
+  (define-expression-type sentential-not 5
+    (and (listp expression)
+       (equal (first expression) 'not)
+       (= (length expression) 2)))
 
-  (define-expression-type double-not
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-not (second expression))))
+  (define-expression-type double-not 0
+    (and (expression-type-p 'sentential-not expression)
+       (listp (second expression))
+       (expression-type-p 'sentential-not (second expression))))
 #+END_SRC
 
 ** TODO And
@@ -355,15 +379,15 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: And Classification
 #+Name: and-classification
 #+BEGIN_SRC lisp 
-  (define-expression-type sentential-and
-      (and (listp expression)
-         (equal (first expression) 'and)
-         (>= (length (rest expression)) 2)))
+  (define-expression-type sentential-and 1
+    (and (listp expression)
+       (equal (first expression) 'and)
+       (>= (length (rest expression)) 2)))
 
-  (define-expression-type not-and
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-and (second expression))))
+  (define-expression-type not-and 2
+    (and (expression-type-p 'sentential-not expression)
+       (listp (second expression))
+       (expression-type-p 'sentential-and (second expression))))
 #+END_SRC
 
 ** TODO Or
@@ -374,15 +398,15 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: Or Classification
 #+Name: or-classification
 #+BEGIN_SRC lisp 
-  (define-expression-type sentential-or
-      (and (listp expression)
-         (equal (first expression) 'or)
-         (>= (length (rest expression)) 2)))
+  (define-expression-type sentential-or 2
+    (and (listp expression)
+       (equal (first expression) 'or)
+       (>= (length (rest expression)) 2)))
 
-  (define-expression-type not-or
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-or (second expression))))
+  (define-expression-type not-or 1
+    (and (expression-type-p 'sentential-not expression)
+       (listp (second expression))
+       (expression-type-p 'sentential-or (second expression))))
 #+END_SRC
 
 ** TODO Implication
@@ -393,15 +417,15 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: Implication Classification
 #+Name: implication-classification
 #+BEGIN_SRC lisp 
-  (define-expression-type sentential-implication
-      (and (listp expression)
-         (equal 'implies (first expression))
-         (= (length (rest expression)) 2)))
+  (define-expression-type sentential-implication 2
+    (and (listp expression)
+       (equal 'implies (first expression))
+       (= (length (rest expression)) 2)))
 
-  (define-expression-type not-implication
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-implication (second expression))))
+  (define-expression-type not-implication 1
+    (and (expression-type-p 'sentential-not expression)
+       (listp (second expression))
+       (expression-type-p 'sentential-implication (second expression))))
 #+END_SRC
 
 ** TODO Biconditional
@@ -412,15 +436,15 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: Biconditional Classification
 #+Name: bicond-classification
 #+BEGIN_SRC lisp 
-  (define-expression-type sentential-biconditional
-      (and (listp expression)
-         (equal (first expression) 'iff)
-         (= (length (rest expression)) 2)))
+  (define-expression-type sentential-biconditional 2
+    (and (listp expression)
+       (equal (first expression) 'iff)
+       (= (length (rest expression)) 2)))
 
-  (define-expression-type not-biconditional
-      (and (expression-type-p 'sentential-not expression)
-         (listp (second expression))
-         (expression-type-p 'sentential-biconditional (second expression))))
+  (define-expression-type not-biconditional 2
+    (and (expression-type-p 'sentential-not expression)
+       (listp (second expression))
+       (expression-type-p 'sentential-biconditional (second expression))))
 #+END_SRC
 
 ** TODO Other
@@ -431,10 +455,10 @@ These 11 lines are the most important in the application.  This is what's used t
 #+Caption: Atom Classification
 #+Name: atom-classification
 #+BEGIN_SRC lisp 
-  (define-expression-type atom
-      (or (symbolp expression)
-         (and (expression-type-p 'sentential-not expression)
-            (symbolp (second expression)))))
+  (define-expression-type atom -1
+    (or (symbolp expression)
+       (and (expression-type-p 'sentential-not expression)
+          (symbolp (second expression)))))
 #+END_SRC
 
 * WORKING Utilities [0/4]
@@ -560,7 +584,9 @@ Symbolic SAT is composed of four packages, as follows:
           #:symbolic-sat-common-symbols)
     (:import-from #:alexandria
                   #:symbolicate)
-    (:export #:expression-type-p))
+    (:export #:expression-type-p
+             #:has-branchiness-p
+             #:is-branchy-as))
 
   (defpackage #:symbolic-sat-utils
     (:use #:cl
