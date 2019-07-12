@@ -29,8 +29,7 @@
 #+Name: tangle-document
 #+BEGIN_SRC emacs-lisp :exports none :results none
   (save-buffer)
-  (let ((python-indent-offset 4))
-    (org-babel-tangle))
+  (org-babel-tangle)
 #+END_SRC
 
 * DONE Introduction                                                   :nonum:
