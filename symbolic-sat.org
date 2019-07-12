@@ -288,7 +288,7 @@ These 11 lines are the most important in the application.  This is what's used t
       (dispatch-solution (non-atomic-add new unchecked) (cons new current-path))))
 #+END_SRC
 
-* WORKING Expression Classification [1/9]
+* WORKING Expression Classification [2/9]
 :PROPERTIES:
 :ID:       98ce9388-02b2-4027-aa4e-0a82ef8e3cbd
 :END:
@@ -339,10 +339,13 @@ To even be able to check types, we need to define types.  This is done with the 
          ',type-name)))
 #+END_SRC
 
-** TODO Expresion Type Checking
+** DONE Expression Type Checking
+CLOSED: [2019-07-12 Fri 13:56]
 :PROPERTIES:
 :ID:       34540858-636e-4336-89e7-63dca947c739
 :END:
+
+Expressions are checked for their type with ~expression-type-p~, which takes a type name (either ~*~ or one that's defined later on), and an expression.  If the type name is simply ~*~, it returns true.  Otherwise, it looks for the type predicate (using ~assoc~), and calls it (the second value in the three-tuple ~*types*~ entry) on the expression.
 
 #+Caption: Expression Type Checking
 #+Name: expression-type-checking
