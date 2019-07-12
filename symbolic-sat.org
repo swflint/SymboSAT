@@ -506,7 +506,7 @@ An expression's "branchiness" is a value that (generally) is in the range \([-1,
 
   <<clause-collection>>
   <<conflict-checking>>
-  <<clause-adding>>
+  <<expression-adding>>
   <<sort-atoms>>
 #+END_SRC
 
@@ -552,7 +552,7 @@ An expression's "branchiness" is a value that (generally) is in the range \([-1,
           (not (null expr)))))
 #+END_SRC
 
-** DONE Clause Adding
+** DONE Expression Adding
 CLOSED: [2019-07-12 Fri 14:18]
 :PROPERTIES:
 :ID:       2cf45428-0740-4b08-bba8-68353a9b79f3
@@ -560,8 +560,8 @@ CLOSED: [2019-07-12 Fri 14:18]
 
 To simplify some things in the solver (adding expressions to the list of unchecked), we take an expression, and a list of other expressions.  If the expression is not an ~atom~ (recall the various types), it ~cons~'s it on to the front of the list, or returns just the list with no modifications.
 
-#+Caption: Clause Adding
-#+Name: clause-adding
+#+Caption: Expression Adding
+#+Name: expression-adding
 #+BEGIN_SRC lisp 
   (defun non-atomic-add (expr list)
     (if (not (expression-type-p 'atom expr))
